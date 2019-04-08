@@ -1,0 +1,1 @@
+cat webservice_search.csv | awk -F "," '{print $1}' | sort -nr | uniq -c

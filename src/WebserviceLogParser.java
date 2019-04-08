@@ -29,6 +29,8 @@ public class WebserviceLogParser {
 	private static final String COMMA = ",";
 	private static final int MAX_JOURENY_COUNT = 2;
 
+	private static final String CARRIER_HUB = "SHJ";
+
 	private static final String OUTPUT_FILE = "/tmp/webservice_search.csv";
 
 	public static void main(String[] args) {
@@ -62,6 +64,8 @@ public class WebserviceLogParser {
 						String journeyType = deriveJourenyType(journeyList);
 
 						if (journeyList.size() <= MAX_JOURENY_COUNT) {
+							sb.append(journeyType);
+							sb.append(COMMA);
 							sb.append(adultQuantity);
 							sb.append(COMMA);
 							journeyList.forEach(x -> sb.append(x.toString()));
@@ -111,16 +115,26 @@ public class WebserviceLogParser {
 
 	private static String deriveJourenyType(List<JourenyInfo> journeyList) {
 		String jourenyType = "UNKNOWN";
+
 		if (journeyList.size() == 1) {
-			jourenyType = "ONEWAY-OR-CONNECTION";
+			jourenyType = "CONNECTION-OR-INVALID";
+			JourenyInfo single = journeyList.get(0);
+			if (isHubRelated(single)) {
+				jourenyType = "ONEWAY";
+			}
+
 		} else if (journeyList.size() == 2) {
 
 			JourenyInfo outbound = journeyList.get(0);
 			JourenyInfo inbound = journeyList.get(1);
 
 			if (outbound.getDetination().equals(inbound.getOrigin())) {
-				if (inbound.getDetination().equals(inbound.getOrigin())) {
+				if (inbound.getDetination().equals(outbound.getOrigin())) {
 					jourenyType = "RETURN";
+					if (!isHubRelated(outbound)) {
+						jourenyType = "CONNECTION_RETURN";
+					}
+
 				} else {
 					jourenyType = "CONNECTION";
 				}
@@ -130,6 +144,16 @@ public class WebserviceLogParser {
 		}
 
 		return jourenyType;
+	}
+
+	private static boolean isHubRelated(JourenyInfo joureney) {
+		if (joureney.getOrigin().equals(CARRIER_HUB)) {
+			return true;
+		}
+		if (joureney.getDetination().equals(CARRIER_HUB)) {
+			return true;
+		}
+		return false;
 	}
 
 	private static void writeToFile(StringBuilder sb) throws IOException {

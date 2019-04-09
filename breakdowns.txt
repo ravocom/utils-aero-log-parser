@@ -1,1 +1,1 @@
-cat webservice_search.csv | awk -F "," '{print $1}' | sort -nr | uniq -c
+cat live_webservice_search.csv | awk -F "," '{print $1}' | sort -nr | uniq -c

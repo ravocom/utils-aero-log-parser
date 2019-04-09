@@ -6,6 +6,8 @@ public class JourenyInfo implements Serializable, Comparable<JourenyInfo> {
 
 	private static final long serialVersionUID = 1L;
 	private static final String COMMA = ",";
+	private static final String DASH = "-";
+	private static final String DATE_POSTPREFIX = "T00:00:00";
 
 	private String origin;
 	private String detination;
@@ -56,9 +58,22 @@ public class JourenyInfo implements Serializable, Comparable<JourenyInfo> {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(origin).append(COMMA).append(detination).append(COMMA).append(departureDate).append(COMMA);
+		String formatedDate = getFormatedDate(this.departureDate);
+		sb.append(origin).append(COMMA).append(detination).append(COMMA).append(formatedDate).append(COMMA);
 		return sb.toString();
 
+	}
+
+	private String getFormatedDate(String date) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(date.substring(0, 4));
+		sb.append(DASH);
+		sb.append(date.substring(4, 6));
+		sb.append(DASH);
+		sb.append(date.substring(6, 8));
+		sb.append(DATE_POSTPREFIX);
+
+		return sb.toString();
 	}
 
 	public String log() {

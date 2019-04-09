@@ -20,7 +20,7 @@ import dto.JourenyInfo;
 public class WebserviceLogParser {
 
 	// private static final String FILENAME = "/tmp/test.log";
-	private static final String FILENAME = "/home/rimaz/oracle_utils/ws-analytics.log.2019-04-08-08-10.8.18.10.log";
+	private static final String FILENAME = "/home/rimaz/oracle/ws-analytics.log.2019-04-08-08-10.8.18.18.log";
 	private static final String OPERATION = "getAvailability";
 
 	private static final String KEY_JOURNEY = "JOURNEY_INFO=<";
@@ -39,6 +39,10 @@ public class WebserviceLogParser {
 	private static final String OUTPUT_FILE = "/tmp/live_webservice_search.csv";
 
 	public static void main(String[] args) {
+		new WebserviceLogParser().parse(FILENAME);
+	}
+
+	public void parse(String fileName) {
 
 		BufferedReader br = null;
 		FileReader fr = null;
@@ -47,7 +51,7 @@ public class WebserviceLogParser {
 
 			long startTime = new Date().getTime();
 
-			fr = new FileReader(FILENAME);
+			fr = new FileReader(fileName);
 			br = new BufferedReader(fr);
 
 			String line = null;
@@ -205,7 +209,7 @@ public class WebserviceLogParser {
 	}
 
 	private static void writeToFile(StringBuilder sb) throws IOException {
-		FileWriter writer = new FileWriter(OUTPUT_FILE);
+		FileWriter writer = new FileWriter(OUTPUT_FILE, true);
 		BufferedWriter bw = new BufferedWriter(writer);
 		bw.write(sb.toString());
 		bw.close();

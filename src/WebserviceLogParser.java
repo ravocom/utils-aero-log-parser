@@ -31,7 +31,7 @@ public class WebserviceLogParser {
 	private static final String DUMMY_RETURN = ",,,";
 	private static final int MAX_JOURENY_COUNT = 2;
 
-	private static final int RESPONSE_TIME_LOWER_THRESHOLD = 300;
+	private static final int RESPONSE_TIME_LOWER_THRESHOLD = 0;
 	private static boolean FILETER_ONLY_RETURN = false;
 
 	private static final String CARRIER_HUB = "SHJ";

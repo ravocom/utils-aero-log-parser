@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,32 +17,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dto.JourenyInfo;
+import dto.OriginDestinationInfo;
 
 public class ServiceAppLogParser {
 
 	// private static final String FILENAME = "/tmp/test.log";
 	// private static final String FILENAME =
 	// "/home/rimaz/oracle/ws-analytics.log.2019-04-08-08-10.8.18.18.log";
-	private static final String FILENAME = "/home/rimaz/oracle_utils/filtered/raw_one_min_getAvailability_09ARP2019_0826.log";
-	private static final String OPERATION = "getAvailability";
-
-	private static final String KEY_JOURNEY = "JOURNEY_INFO=<";
-	private static final String KEY_QUANTITY = "QUANTITY=<";
-	private static final String RESPONSE_TIME = "RESPONSE_TIME=<";
-
-	private static final String COMMA = ",";
-	private static final String DUMMY_RETURN = ",,,";
-	private static final int MAX_JOURENY_COUNT = 2;
-
-	private static final int RESPONSE_TIME_LOWER_THRESHOLD = 600;
-	private static boolean FILETER_ONLY_RETURN = true;
+	private static final String FILENAME = "/home/rimaz/oracle_utils/service-app/sample.log";
 
 	private static final String CARRIER_HUB = "SHJ";
 
-	private static final String OUTPUT_FILE = "/tmp/live_webservice_search.csv";
+	private static final String OUTPUT_FILE = "/tmp/live_service_app_search.csv";
+	private static final String KEY_OND_EXPANDED = "ond_expanded=<";
 
 	public static void main(String[] args) {
-		new WebserviceLogParser().parse(FILENAME);
+		new ServiceAppLogParser().parse(FILENAME);
 	}
 
 	public void parse(String fileName) {
@@ -51,96 +42,32 @@ public class ServiceAppLogParser {
 
 		try {
 
-			int jourenyCount = 0;
-
 			long startTime = new Date().getTime();
 
 			fr = new FileReader(fileName);
 			br = new BufferedReader(fr);
-
 			String line = null;
-			int recordCount = 0;
-			int errorCount = 0;
-			int exceededJourenyCount = 0;
-			int noAdults = 0;
-			int lowerResponse = 0;
-			int nonReturnCount = 0;
 
 			StringBuilder sb = new StringBuilder();
 
 			while ((line = br.readLine()) != null) {
-				if (line.indexOf(OPERATION) > 1) {
+				String ondjson = extractValue(line, KEY_OND_EXPANDED);
+				System.out.println(ondjson);
 
-					try {
-						String jsonQuantity = extractValue(line, KEY_QUANTITY);
-						String adultQuantity = extractPlainValueFromJson(jsonQuantity, "ADT");
+				ObjectMapper mapper = new ObjectMapper();
 
-						String strResponseTime = extractValue(line, RESPONSE_TIME);
-						int responseTime = Integer.parseInt(strResponseTime);
+				Map<String, OriginDestinationInfo> map = new HashMap<String, OriginDestinationInfo>();
 
-						String jsonJoureny = extractValue(line, KEY_JOURNEY);
-						List<JourenyInfo> journeyList = convertToJourney(jsonJoureny);
-						String journeyType = deriveJourenyType(journeyList);
+				// convert JSON string to Map
+				map = mapper.readValue(ondjson, new TypeReference<Map<String, String>>() {
+				});
 
-						if (responseTime > RESPONSE_TIME_LOWER_THRESHOLD) {
-							System.out.println("Response Time=" + responseTime);
-
-							if (adultQuantity != null) {
-								if (journeyList.size() <= MAX_JOURENY_COUNT) {
-
-									if (isIncludeNonReturn(journeyType)) {
-
-										jourenyCount++;
-
-										sb.append(journeyType);
-										sb.append(COMMA);
-										sb.append(adultQuantity);
-										sb.append(COMMA);
-										journeyList.forEach(x -> sb.append(x.toString()));
-
-										if (journeyList.size() == 1) {
-											sb.append(DUMMY_RETURN);
-										}
-
-										sb.append("\n");
-
-										if (jourenyCount > 301) {
-											break;
-										}
-
-									} else {
-										++nonReturnCount;
-									}
-
-								} else {
-									++exceededJourenyCount;
-								}
-							} else {
-								++noAdults;
-							}
-						} else {
-							++lowerResponse;
-						}
-
-					} catch (Exception e) {
-						++errorCount;
-						System.out.println("Error processing line=" + line);
-						e.printStackTrace();
-					}
-
-					++recordCount;
-				}
+				System.out.println(map);
 			}
 
 			writeToFile(sb);
 
 			System.out.println("************************************");
-			System.out.println("Record count= " + recordCount);
-			System.out.println("Exception count (ignored)= " + errorCount);
-			System.out.println("ExceededJoureny count( ignored)= " + exceededJourenyCount);
-			System.out.println("noAdults count( ignored)= " + noAdults);
-			System.out.println("lowerResponse count( ignored)= " + lowerResponse);
-			System.out.println("nonReturnCount count( ignored)= " + nonReturnCount);
 			System.out.println("Time taken to process (seconds) = " + (new Date().getTime() - startTime) / 1000);
 			System.out.println("\n File is generated at " + OUTPUT_FILE);
 			System.out.println("************************************");
@@ -162,19 +89,6 @@ public class ServiceAppLogParser {
 
 		}
 
-	}
-
-	private static boolean isIncludeNonReturn(String journeyType) {
-		boolean include = true;
-		if (FILETER_ONLY_RETURN == true) {
-			if (journeyType.indexOf("RETURN") > 0) {
-				include = true;
-			} else {
-				include = false;
-			}
-		}
-
-		return include;
 	}
 
 	private static String deriveJourenyType(List<JourenyInfo> journeyList) {

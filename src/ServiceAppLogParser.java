@@ -3,6 +3,8 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -16,7 +18,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dto.BasePreferences;
 import dto.JourenyInfo;
 import dto.OriginDestinationInfo;
 
@@ -25,12 +26,20 @@ public class ServiceAppLogParser {
 	// private static final String FILENAME = "/tmp/test.log";
 	// private static final String FILENAME =
 	// "/home/rimaz/oracle/ws-analytics.log.2019-04-08-08-10.8.18.18.log";
-	private static final String FILENAME = "/home/rimaz/oracle_utils/service-app/sample.log";
+//	private static final String FILENAME = "/home/rimaz/oracle_utils/service-app/sample.log";
+	private static final String FILENAME = "/home/rimaz/oracle_utils/service-app/analytics_ibe_search.log.2019-04-10-12";
 
 	private static final String CARRIER_HUB = "SHJ";
+	private static final String COMMA = ",";
 
 	private static final String OUTPUT_FILE = "/tmp/live_service_app_search.csv";
 	private static final String KEY_OND_EXPANDED = "ond_expanded=<";
+
+	private static final String PARSE_DATE_FORMAT = "MMM dd, yyyy hh:mm:ss a";
+	private static final String TIME_CONSTANT = "T00:00:00";
+
+	private static final String ONEWAY = "ONEWAY";
+	private static final String RETURN = "RETURN";
 
 	public static void main(String[] args) {
 		new ServiceAppLogParser().parse(FILENAME);
@@ -53,9 +62,10 @@ public class ServiceAppLogParser {
 
 			while ((line = br.readLine()) != null) {
 				String ondjson = extractValue(line, KEY_OND_EXPANDED);
-				System.out.println(ondjson);
-
 				ObjectMapper mapper = new ObjectMapper();
+
+				DateFormat dateFormat = new SimpleDateFormat(PARSE_DATE_FORMAT);
+				mapper.setDateFormat(dateFormat);
 
 				Map<String, OriginDestinationInfo> map = new HashMap<String, OriginDestinationInfo>();
 
@@ -64,15 +74,31 @@ public class ServiceAppLogParser {
 				});
 
 				List<OriginDestinationInfo> travelList = new ArrayList<>(map.values());
+				Collections.sort(travelList);
+
+				boolean returnSearch = OriginDestinationInfo.isReturnSearch(travelList);
+				String jourenyType = returnSearch ? RETURN : ONEWAY;
+				sb.append(jourenyType);
+				sb.append(COMMA);
 
 				for (OriginDestinationInfo travelInfo : travelList) {
 					String origin = travelInfo.getOrigin();
 					String destination = travelInfo.getDestination();
-					String departureDate = travelInfo.getDepartureDateTime();
-					System.out.println(origin + ":" + destination + ":" + departureDate);
+					Date departureDate = travelInfo.getDepartureDateTime();
+
+					sb.append(origin);
+					sb.append(COMMA);
+					sb.append(destination);
+					sb.append(COMMA);
+					sb.append(departureDate);
+					sb.append(TIME_CONSTANT);
+					sb.append(COMMA);
 				}
+				sb.append("\n");
 
 			}
+
+			// System.out.println(sb.toString());
 
 			writeToFile(sb);
 

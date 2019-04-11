@@ -1,13 +1,22 @@
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class Harness {
 
 	public static void main(String[] args) {
-		String dateStr = "20190801";
-		String out = dateStr.substring(6, 8);
+		String dateStr = "Apr 23, 2019 05:40:00 PM";
+	//	String dateStr = "Apr 23, 2019 13:00:00";
 
-		String converted = dateStr.substring(0, 4) + "-" + dateStr.substring(4, 6) + "-" + dateStr.substring(6, 8)
-				+ "T00:00:00";
-
-		System.out.println(converted);
+		SimpleDateFormat format = new SimpleDateFormat("MMM dd, yyyy hh:mm:ss a");
+		Date date;
+		try {
+			date = format.parse(dateStr);
+			System.out.println(date);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 

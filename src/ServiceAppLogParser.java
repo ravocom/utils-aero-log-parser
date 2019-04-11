@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dto.BasePreferences;
 import dto.JourenyInfo;
 import dto.OriginDestinationInfo;
 
@@ -59,10 +60,18 @@ public class ServiceAppLogParser {
 				Map<String, OriginDestinationInfo> map = new HashMap<String, OriginDestinationInfo>();
 
 				// convert JSON string to Map
-				map = mapper.readValue(ondjson, new TypeReference<Map<String, String>>() {
+				map = mapper.readValue(ondjson, new TypeReference<Map<String, OriginDestinationInfo>>() {
 				});
 
-				System.out.println(map);
+				List<OriginDestinationInfo> travelList = new ArrayList<>(map.values());
+
+				for (OriginDestinationInfo travelInfo : travelList) {
+					String origin = travelInfo.getOrigin();
+					String destination = travelInfo.getDestination();
+					String departureDate = travelInfo.getDepartureDateTime();
+					System.out.println(origin + ":" + destination + ":" + departureDate);
+				}
+
 			}
 
 			writeToFile(sb);

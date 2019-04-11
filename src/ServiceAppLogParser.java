@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,12 +35,16 @@ public class ServiceAppLogParser {
 
 	private static final String OUTPUT_FILE = "/tmp/live_service_app_search.csv";
 	private static final String KEY_OND_EXPANDED = "ond_expanded=<";
+	private static final String KEY_SEARCH_SYSTEM = "search_system=<";
+	private static final String KEY_SEARCH_KEY = "search_key=<";
 
 	private static final String PARSE_DATE_FORMAT = "MMM dd, yyyy hh:mm:ss a";
 	private static final String TIME_CONSTANT = "T00:00:00";
 
-	private static final String ONEWAY = "ONEWAY";
-	private static final String RETURN = "RETURN";
+	private static final String JSON_TIMESTAMP = "yyyy-MM-dd HH:mm:ss";
+
+	private static final String RANGE_STR_START_DATE = "2019-04-10 10:37:23";
+	private static final int RANGE_MINUUES = 4;
 
 	public static void main(String[] args) {
 		new ServiceAppLogParser().parse(FILENAME);
@@ -58,43 +63,78 @@ public class ServiceAppLogParser {
 			br = new BufferedReader(fr);
 			String line = null;
 
+			int exceptionCount = 0;
+			int successCount = 0;
+
+			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			Date startDate = format.parse(RANGE_STR_START_DATE);
+			Date endDate = DateUtil.addMinutes(startDate, RANGE_MINUUES);
+
 			StringBuilder sb = new StringBuilder();
 
 			while ((line = br.readLine()) != null) {
-				String ondjson = extractValue(line, KEY_OND_EXPANDED);
-				ObjectMapper mapper = new ObjectMapper();
+				try {
 
-				DateFormat dateFormat = new SimpleDateFormat(PARSE_DATE_FORMAT);
-				mapper.setDateFormat(dateFormat);
+					String jsonSearchSystem = extractValue(line, KEY_SEARCH_SYSTEM);
+					String strTimestamp = line.split(",")[0];
 
-				Map<String, OriginDestinationInfo> map = new HashMap<String, OriginDestinationInfo>();
+					SimpleDateFormat jsonFormat = new SimpleDateFormat(JSON_TIMESTAMP);
+					Date timestamp = jsonFormat.parse(strTimestamp);
 
-				// convert JSON string to Map
-				map = mapper.readValue(ondjson, new TypeReference<Map<String, OriginDestinationInfo>>() {
-				});
+					if (filterByRange(timestamp, startDate, endDate) && "AA".equals(jsonSearchSystem)) {
 
-				List<OriginDestinationInfo> travelList = new ArrayList<>(map.values());
-				Collections.sort(travelList);
+						String ondjson = extractValue(line, KEY_OND_EXPANDED);
+						ObjectMapper mapper = new ObjectMapper();
 
-				boolean returnSearch = OriginDestinationInfo.isReturnSearch(travelList);
-				String jourenyType = returnSearch ? RETURN : ONEWAY;
-				sb.append(jourenyType);
-				sb.append(COMMA);
+						String searchKey = extractValue(line, KEY_SEARCH_KEY);
+						String adultCount = searchKey.split("_")[0];
 
-				for (OriginDestinationInfo travelInfo : travelList) {
-					String origin = travelInfo.getOrigin();
-					String destination = travelInfo.getDestination();
-					Date departureDate = travelInfo.getDepartureDateTime();
+						DateFormat dateFormat = new SimpleDateFormat(PARSE_DATE_FORMAT);
+						mapper.setDateFormat(dateFormat);
 
-					sb.append(origin);
-					sb.append(COMMA);
-					sb.append(destination);
-					sb.append(COMMA);
-					sb.append(departureDate);
-					sb.append(TIME_CONSTANT);
-					sb.append(COMMA);
+						Map<String, OriginDestinationInfo> map = new HashMap<String, OriginDestinationInfo>();
+
+						// convert JSON string to Map
+						map = mapper.readValue(ondjson, new TypeReference<Map<String, OriginDestinationInfo>>() {
+						});
+
+						List<OriginDestinationInfo> travelList = new ArrayList<>(map.values());
+						Collections.sort(travelList);
+
+						String jourenyType = deriveJourenyType(travelList);
+
+						if (isAllowJoureny(jourenyType)) {
+
+							sb.append(jourenyType);
+							sb.append(COMMA);
+							sb.append(jsonSearchSystem);
+							sb.append(COMMA);
+						//	sb.append(adultCount);
+						//	sb.append(COMMA);
+
+							for (OriginDestinationInfo travelInfo : travelList) {
+								String origin = travelInfo.getOrigin();
+								String destination = travelInfo.getDestination();
+								Date departureDate = travelInfo.getDepartureDateTime();
+
+								sb.append(origin);
+								sb.append(COMMA);
+								sb.append(destination);
+								sb.append(COMMA);
+								sb.append(departureDate);
+								sb.append(TIME_CONSTANT);
+								sb.append(COMMA);
+							}
+							sb.append("\n");
+							successCount++;
+						}
+
+					}
+
+				} catch (Exception e) {
+					++exceptionCount;
+					e.printStackTrace();
 				}
-				sb.append("\n");
 
 			}
 
@@ -104,6 +144,8 @@ public class ServiceAppLogParser {
 
 			System.out.println("************************************");
 			System.out.println("Time taken to process (seconds) = " + (new Date().getTime() - startTime) / 1000);
+			System.out.println("Success count =" + successCount);
+			System.out.println("Exception count =" + exceptionCount);
 			System.out.println("\n File is generated at " + OUTPUT_FILE);
 			System.out.println("************************************");
 
@@ -126,23 +168,35 @@ public class ServiceAppLogParser {
 
 	}
 
-	private static String deriveJourenyType(List<JourenyInfo> journeyList) {
+	private boolean isAllowJoureny(String jourenyType) {
+		boolean allow = true;
+		allow = jourenyType.indexOf("RETURN") > -1;
+		return allow;
+	}
+
+	private boolean filterByRange(Date timestamp, Date startDate, Date endDate) {
+		boolean allow = true;
+		allow = DateUtil.isBetween(timestamp, startDate, endDate);
+		return allow;
+	}
+
+	private static String deriveJourenyType(List<OriginDestinationInfo> travelList) {
 		String jourenyType = "UNKNOWN";
 
-		if (journeyList.size() == 1) {
-			jourenyType = "CONNECTION";
-			JourenyInfo single = journeyList.get(0);
-			if (isHubRelated(single)) {
-				jourenyType = "ONEWAY";
+		if (travelList.size() == 1) {
+			jourenyType = "ONEWAY";
+			OriginDestinationInfo single = travelList.get(0);
+			if (!isHubRelated(single)) {
+				jourenyType = "CONNECTION";
 			}
 
-		} else if (journeyList.size() == 2) {
+		} else if (travelList.size() == 2) {
 
-			JourenyInfo outbound = journeyList.get(0);
-			JourenyInfo inbound = journeyList.get(1);
+			OriginDestinationInfo outbound = travelList.get(0);
+			OriginDestinationInfo inbound = travelList.get(1);
 
-			if (outbound.getDetination().equals(inbound.getOrigin())) {
-				if (inbound.getDetination().equals(outbound.getOrigin())) {
+			if (outbound.getDestination().equals(inbound.getOrigin())) {
+				if (inbound.getDestination().equals(outbound.getOrigin())) {
 					jourenyType = "RETURN";
 					if (!isHubRelated(outbound)) {
 						jourenyType = "CONNECTION_RETURN";
@@ -159,11 +213,11 @@ public class ServiceAppLogParser {
 		return jourenyType;
 	}
 
-	private static boolean isHubRelated(JourenyInfo joureney) {
-		if (joureney.getOrigin().equals(CARRIER_HUB)) {
+	private static boolean isHubRelated(OriginDestinationInfo single) {
+		if (single.getOrigin().equals(CARRIER_HUB)) {
 			return true;
 		}
-		if (joureney.getDetination().equals(CARRIER_HUB)) {
+		if (single.getDestination().equals(CARRIER_HUB)) {
 			return true;
 		}
 		return false;

@@ -20,7 +20,8 @@ import dto.JourenyInfo;
 public class WebserviceLogParser {
 
 	// private static final String FILENAME = "/tmp/test.log";
-	//private static final String FILENAME = "/home/rimaz/oracle/ws-analytics.log.2019-04-08-08-10.8.18.18.log";
+	// private static final String FILENAME =
+	// "/home/rimaz/oracle/ws-analytics.log.2019-04-08-08-10.8.18.18.log";
 	private static final String FILENAME = "/home/rimaz/oracle_utils/filtered/raw_one_min_getAvailability_09ARP2019_0826.log";
 	private static final String OPERATION = "getAvailability";
 
@@ -34,7 +35,7 @@ public class WebserviceLogParser {
 
 	private static final int RESPONSE_TIME_LOWER_THRESHOLD = 600;
 	private static boolean FILETER_ONLY_RETURN = true;
-	
+
 	private static final String CARRIER_HUB = "SHJ";
 
 	private static final String OUTPUT_FILE = "/tmp/live_webservice_search.csv";
@@ -49,8 +50,8 @@ public class WebserviceLogParser {
 		FileReader fr = null;
 
 		try {
-			
-			int jourenyCount =0;
+
+			int jourenyCount = 0;
 
 			long startTime = new Date().getTime();
 
@@ -83,12 +84,12 @@ public class WebserviceLogParser {
 
 						if (responseTime > RESPONSE_TIME_LOWER_THRESHOLD) {
 							System.out.println("Response Time=" + responseTime);
-							
+
 							if (adultQuantity != null) {
 								if (journeyList.size() <= MAX_JOURENY_COUNT) {
 
 									if (isIncludeNonReturn(journeyType)) {
-										
+
 										jourenyCount++;
 
 										sb.append(journeyType);
@@ -102,9 +103,8 @@ public class WebserviceLogParser {
 										}
 
 										sb.append("\n");
-										
-										
-										if(jourenyCount > 301) {
+
+										if (jourenyCount > 301) {
 											break;
 										}
 
@@ -181,10 +181,10 @@ public class WebserviceLogParser {
 		String jourenyType = "UNKNOWN";
 
 		if (journeyList.size() == 1) {
-			jourenyType = "CONNECTION";
+			jourenyType = "ONEWAY";
 			JourenyInfo single = journeyList.get(0);
-			if (isHubRelated(single)) {
-				jourenyType = "ONEWAY";
+			if (!isHubRelated(single)) {
+				jourenyType = "CONNECTION";
 			}
 
 		} else if (journeyList.size() == 2) {

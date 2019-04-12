@@ -6,7 +6,7 @@ public class DirectoryReader {
 
 	public static void main(String[] args) {
 		//collectServiceAppData("/home/rimaz/oracle_utils/service-app/filtered_1hour_10ARP2019_10/");
-		collectWebserviceData("/home/rimaz/oracle_utils/08hour/");
+		collectWebserviceData("/home/rimaz/oracle_utils/ws/08hour/");
 	}
 
 	public static void collectWebserviceData(String feed) {

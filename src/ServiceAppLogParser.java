@@ -45,6 +45,8 @@ public class ServiceAppLogParser {
 
 	private static final String RANGE_STR_START_DATE = "2019-04-10 10:37:23";
 	private static final int RANGE_MINUUES = 4;
+	
+	private boolean mask =true;
 
 	public static void main(String[] args) {
 		new ServiceAppLogParser().parse(FILENAME);
@@ -87,7 +89,21 @@ public class ServiceAppLogParser {
 						ObjectMapper mapper = new ObjectMapper();
 
 						String searchKey = extractValue(line, KEY_SEARCH_KEY);
-						String adultCount = searchKey.split("_")[0];
+						
+						
+						String [] array = searchKey.split("_");
+						
+						int keySize = array.length -5;
+						String adultCount  = array[keySize];
+						int aa= Integer.parseInt(adultCount);
+						
+						if(aa >1) {
+							System.out.println(searchKey);
+							System.out.println(adultCount);
+						}
+						//System.out.println(aa);
+						
+						//System.out.println(adultCount);
 
 						DateFormat dateFormat = new SimpleDateFormat(PARSE_DATE_FORMAT);
 						mapper.setDateFormat(dateFormat);
@@ -105,12 +121,15 @@ public class ServiceAppLogParser {
 
 						if (isAllowJoureny(jourenyType)) {
 
-							sb.append(jourenyType);
+							if(!mask) {
+								sb.append(jourenyType);
+								sb.append(COMMA);
+								sb.append(jsonSearchSystem);
+								sb.append(COMMA);
+							}
+							
+							sb.append(adultCount);
 							sb.append(COMMA);
-							sb.append(jsonSearchSystem);
-							sb.append(COMMA);
-						//	sb.append(adultCount);
-						//	sb.append(COMMA);
 
 							for (OriginDestinationInfo travelInfo : travelList) {
 								String origin = travelInfo.getOrigin();

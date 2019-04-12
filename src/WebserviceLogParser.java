@@ -35,6 +35,8 @@ public class WebserviceLogParser {
 
 	private static final int RESPONSE_TIME_LOWER_THRESHOLD = 600;
 	private static boolean FILETER_ONLY_RETURN = true;
+	
+	private boolean mask = true;
 
 	private static final String CARRIER_HUB = "SHJ";
 
@@ -91,9 +93,14 @@ public class WebserviceLogParser {
 									if (isIncludeNonReturn(journeyType)) {
 
 										jourenyCount++;
+										
+										
+										if(!mask) {
+											sb.append(journeyType);
+											sb.append(COMMA);
+										}
 
-										sb.append(journeyType);
-										sb.append(COMMA);
+										
 										sb.append(adultQuantity);
 										sb.append(COMMA);
 										journeyList.forEach(x -> sb.append(x.toString()));
@@ -167,7 +174,7 @@ public class WebserviceLogParser {
 	private static boolean isIncludeNonReturn(String journeyType) {
 		boolean include = true;
 		if (FILETER_ONLY_RETURN == true) {
-			if (journeyType.indexOf("RETURN") > 0) {
+			if (journeyType.indexOf("RETURN") > -1) {
 				include = true;
 			} else {
 				include = false;

@@ -5,7 +5,17 @@ import java.util.GregorianCalendar;
 
 public class Harness {
 
+	
 	public static void main(String[] args) {
+		String searchKey = "CAI_GOI_0_09/05/2019_GOI_CAI_0_11/05/2019_1_0_0_Y_Y";
+		String [] array = searchKey.split("_");
+		System.out.println(array.length);
+		int keySize = array.length -5;
+		System.out.println(array[keySize]);
+		System.out.println(searchKey);
+	}
+	
+	public static void main1(String[] args) {
 		String strDate = "2019-04-10 12:08:22";
 
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

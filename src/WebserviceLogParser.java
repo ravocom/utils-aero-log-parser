@@ -33,10 +33,10 @@ public class WebserviceLogParser {
 	private static final String DUMMY_RETURN = ",,,";
 	private static final int MAX_JOURENY_COUNT = 2;
 
-	private static final int RESPONSE_TIME_LOWER_THRESHOLD = 600;
-	private static boolean FILETER_ONLY_RETURN = true;
+	private static final int RESPONSE_TIME_LOWER_THRESHOLD = 0;
+	private static boolean FILETER_ONLY_RETURN = false;
 	
-	private boolean mask = true;
+	private boolean mask = false;
 
 	private static final String CARRIER_HUB = "SHJ";
 
@@ -93,7 +93,6 @@ public class WebserviceLogParser {
 									if (isIncludeNonReturn(journeyType)) {
 
 										jourenyCount++;
-										
 										
 										if(!mask) {
 											sb.append(journeyType);

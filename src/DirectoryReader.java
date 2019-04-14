@@ -5,7 +5,7 @@ public class DirectoryReader {
 	private static final String FEED = "/home/rimaz/oracle_utils/08hour/";
 
 	public static void main(String[] args) {
-		//collectServiceAppData("/home/rimaz/oracle_utils/service-app/filtered_1hour_10ARP2019_10/");
+	//	collectServiceAppData("/home/rimaz/oracle_utils/service-app/filtered_1hour_10ARP2019_10/");
 		collectWebserviceData("/home/rimaz/oracle_utils/ws/08hour/");
 	}
 

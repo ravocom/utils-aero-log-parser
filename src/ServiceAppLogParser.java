@@ -44,9 +44,9 @@ public class ServiceAppLogParser {
 	private static final String JSON_TIMESTAMP = "yyyy-MM-dd HH:mm:ss";
 
 	private static final String RANGE_STR_START_DATE = "2019-04-10 10:37:23";
-	private static final int RANGE_MINUUES = 4;
-	
-	private boolean mask =true;
+	private static final int RANGE_MINUUES = 1;
+
+	private boolean mask = false;
 
 	public static void main(String[] args) {
 		new ServiceAppLogParser().parse(FILENAME);
@@ -89,21 +89,19 @@ public class ServiceAppLogParser {
 						ObjectMapper mapper = new ObjectMapper();
 
 						String searchKey = extractValue(line, KEY_SEARCH_KEY);
-						
-						
-						String [] array = searchKey.split("_");
-						
-						int keySize = array.length -5;
-						String adultCount  = array[keySize];
-						int aa= Integer.parseInt(adultCount);
-						
-						if(aa >1) {
-							System.out.println(searchKey);
-							System.out.println(adultCount);
-						}
-						//System.out.println(aa);
-						
-						//System.out.println(adultCount);
+
+						String[] array = searchKey.split("_");
+						int adultJKey = array.length - 5;
+						String strAdultCount = array[adultJKey];
+						int aa = Integer.parseInt(strAdultCount);
+
+						int childKey = array.length - 4;
+						String strChildCount = array[childKey];
+						int childCount = Integer.parseInt(strChildCount);
+
+						int infKey = array.length - 3;
+						String strInfantCount = array[infKey];
+						int infCount = Integer.parseInt(strInfantCount);
 
 						DateFormat dateFormat = new SimpleDateFormat(PARSE_DATE_FORMAT);
 						mapper.setDateFormat(dateFormat);
@@ -121,14 +119,18 @@ public class ServiceAppLogParser {
 
 						if (isAllowJoureny(jourenyType)) {
 
-							if(!mask) {
+							if (!mask) {
 								sb.append(jourenyType);
 								sb.append(COMMA);
 								sb.append(jsonSearchSystem);
 								sb.append(COMMA);
 							}
-							
-							sb.append(adultCount);
+
+							sb.append(strAdultCount);
+							sb.append(COMMA);
+							sb.append(strChildCount);
+							sb.append(COMMA);
+							sb.append(strInfantCount);
 							sb.append(COMMA);
 
 							for (OriginDestinationInfo travelInfo : travelList) {
@@ -189,13 +191,13 @@ public class ServiceAppLogParser {
 
 	private boolean isAllowJoureny(String jourenyType) {
 		boolean allow = true;
-		allow = jourenyType.indexOf("RETURN") > -1;
+		// allow = jourenyType.indexOf("RETURN") > -1;
 		return allow;
 	}
 
 	private boolean filterByRange(Date timestamp, Date startDate, Date endDate) {
 		boolean allow = true;
-		allow = DateUtil.isBetween(timestamp, startDate, endDate);
+		// allow = DateUtil.isBetween(timestamp, startDate, endDate);
 		return allow;
 	}
 

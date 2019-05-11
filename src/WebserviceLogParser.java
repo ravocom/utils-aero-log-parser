@@ -35,7 +35,7 @@ public class WebserviceLogParser {
 
 	private static final int RESPONSE_TIME_LOWER_THRESHOLD = 0;
 	private static boolean FILETER_ONLY_RETURN = false;
-	
+
 	private boolean mask = false;
 
 	private static final String CARRIER_HUB = "SHJ";
@@ -83,9 +83,15 @@ public class WebserviceLogParser {
 						String jsonJoureny = extractValue(line, KEY_JOURNEY);
 						List<JourenyInfo> journeyList = convertToJourney(jsonJoureny);
 						String journeyType = deriveJourenyType(journeyList);
+						
+						JourenyInfo first = journeyList.get(0);
+						String firstDepartureDate = first.getDepartureDate();
+						
+					//	boolean   isFuture = firstDepartureDate.compareTo("20190508") > 0;
+						boolean isFuture = true;
 
-						if (responseTime > RESPONSE_TIME_LOWER_THRESHOLD) {
-							System.out.println("Response Time=" + responseTime);
+						if (isFuture && responseTime > RESPONSE_TIME_LOWER_THRESHOLD) {
+						//	System.out.println("Response Time=" + responseTime);
 
 							if (adultQuantity != null) {
 								if (journeyList.size() <= MAX_JOURENY_COUNT) {
@@ -93,13 +99,12 @@ public class WebserviceLogParser {
 									if (isIncludeNonReturn(journeyType)) {
 
 										jourenyCount++;
-										
-										if(!mask) {
+
+										if (!mask) {
 											sb.append(journeyType);
 											sb.append(COMMA);
 										}
 
-										
 										sb.append(adultQuantity);
 										sb.append(COMMA);
 										journeyList.forEach(x -> sb.append(x.toString()));
@@ -110,9 +115,9 @@ public class WebserviceLogParser {
 
 										sb.append("\n");
 
-										if (jourenyCount > 301) {
-											break;
-										}
+//										if (jourenyCount > 301) {
+//											break;
+//										}
 
 									} else {
 										++nonReturnCount;
@@ -142,6 +147,7 @@ public class WebserviceLogParser {
 
 			System.out.println("************************************");
 			System.out.println("Record count= " + recordCount);
+			System.out.println("Success count= " + jourenyCount);
 			System.out.println("Exception count (ignored)= " + errorCount);
 			System.out.println("ExceededJoureny count( ignored)= " + exceededJourenyCount);
 			System.out.println("noAdults count( ignored)= " + noAdults);

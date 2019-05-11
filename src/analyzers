@@ -1,0 +1,2 @@
+cat ws-analytics.log.2019-05-05-04-10.8.18.*  | grep getAvailability  | awk -F "," '{print $1 "," $7}' | sort -n > /tmp/webservice_05MAY2019_04_persecond_times_getAvail.txt
+cat ws-analytics.log.2019-05-05-04-10.8.18.*  | grep getPrice  | awk -F "," '{print $1 "," $7}' | sort -n > /tmp/webservice_05MAY2019_04_persecond_times_getPrice.txt

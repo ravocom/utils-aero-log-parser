@@ -4,11 +4,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +44,8 @@ public class ServiceAppLogParser {
 
 	private static final String JSON_TIMESTAMP = "yyyy-MM-dd HH:mm:ss";
 
-	private static final String RANGE_STR_START_DATE = "2019-04-10 10:37:23";
-	private static final int RANGE_MINUUES = 1;
+	private static final String RANGE_STR_START_DATE = "2019-04-25 09:29:00";
+	private static final int RANGE_MINUUES = 5;
 
 	private boolean mask = false;
 
@@ -71,6 +72,8 @@ public class ServiceAppLogParser {
 			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			Date startDate = format.parse(RANGE_STR_START_DATE);
 			Date endDate = DateUtil.addMinutes(startDate, RANGE_MINUUES);
+
+			Date lowerLimit = addDateVarience(new Date(), 2);
 
 			StringBuilder sb = new StringBuilder();
 
@@ -115,39 +118,43 @@ public class ServiceAppLogParser {
 						List<OriginDestinationInfo> travelList = new ArrayList<>(map.values());
 						Collections.sort(travelList);
 
-						String jourenyType = deriveJourenyType(travelList);
+						OriginDestinationInfo journey = travelList.get(0);
+						if (journey.getDepartureDateTime().after(lowerLimit)) {
 
-						if (isAllowJoureny(jourenyType)) {
+							String jourenyType = deriveJourenyType(travelList);
 
-							if (!mask) {
-								sb.append(jourenyType);
+							if (isAllowJoureny(jourenyType)) {
+
+								if (!mask) {
+									sb.append(jourenyType);
+									sb.append(COMMA);
+									sb.append(jsonSearchSystem);
+									sb.append(COMMA);
+								}
+
+								sb.append(strAdultCount);
 								sb.append(COMMA);
-								sb.append(jsonSearchSystem);
+								sb.append(strChildCount);
 								sb.append(COMMA);
+								sb.append(strInfantCount);
+								sb.append(COMMA);
+
+								for (OriginDestinationInfo travelInfo : travelList) {
+									String origin = travelInfo.getOrigin();
+									String destination = travelInfo.getDestination();
+									Date departureDate = travelInfo.getDepartureDateTime();
+
+									sb.append(origin);
+									sb.append(COMMA);
+									sb.append(destination);
+									sb.append(COMMA);
+									sb.append(departureDate);
+									sb.append(TIME_CONSTANT);
+									sb.append(COMMA);
+								}
+								sb.append("\n");
+								successCount++;
 							}
-
-							sb.append(strAdultCount);
-							sb.append(COMMA);
-							sb.append(strChildCount);
-							sb.append(COMMA);
-							sb.append(strInfantCount);
-							sb.append(COMMA);
-
-							for (OriginDestinationInfo travelInfo : travelList) {
-								String origin = travelInfo.getOrigin();
-								String destination = travelInfo.getDestination();
-								Date departureDate = travelInfo.getDepartureDateTime();
-
-								sb.append(origin);
-								sb.append(COMMA);
-								sb.append(destination);
-								sb.append(COMMA);
-								sb.append(departureDate);
-								sb.append(TIME_CONSTANT);
-								sb.append(COMMA);
-							}
-							sb.append("\n");
-							successCount++;
 						}
 
 					}
@@ -189,6 +196,22 @@ public class ServiceAppLogParser {
 
 	}
 
+	public static Date addDateVarience(Date target, int varience) {
+		GregorianCalendar gcDate = new GregorianCalendar();
+		gcDate.clear();
+		gcDate.setTime(target);
+
+		int year = gcDate.get(Calendar.YEAR);
+		int month = gcDate.get(Calendar.MONTH);
+		int day = gcDate.get(Calendar.DAY_OF_MONTH) + varience;
+		int hours = gcDate.get(Calendar.HOUR_OF_DAY);
+		int mins = gcDate.get(Calendar.MINUTE);
+		int secs = gcDate.get(Calendar.SECOND);
+
+		GregorianCalendar gc2 = new GregorianCalendar(year, month, day, hours, mins, secs);
+		return gc2.getTime();
+	}
+
 	private boolean isAllowJoureny(String jourenyType) {
 		boolean allow = true;
 		// allow = jourenyType.indexOf("RETURN") > -1;
@@ -197,7 +220,7 @@ public class ServiceAppLogParser {
 
 	private boolean filterByRange(Date timestamp, Date startDate, Date endDate) {
 		boolean allow = true;
-		// allow = DateUtil.isBetween(timestamp, startDate, endDate);
+		//allow = DateUtil.isBetween(timestamp, startDate, endDate);
 		return allow;
 	}
 
